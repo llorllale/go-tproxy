@@ -15,7 +15,7 @@ import (
 // with the Linux IP_TRANSPARENT option defined
 // on the listening socket
 type Listener struct {
-	base net.Listener
+	Base net.Listener
 }
 
 // Accept waits for and returns
@@ -31,7 +31,7 @@ func (listener *Listener) Accept() (net.Conn, error) {
 // and wrap it to a TProxy connection to provide
 // TProxy functionality
 func (listener *Listener) AcceptTProxy() (*Conn, error) {
-	tcpConn, err := listener.base.(*net.TCPListener).AcceptTCP()
+	tcpConn, err := listener.Base.(*net.TCPListener).AcceptTCP()
 	if err != nil {
 		return nil, err
 	}
