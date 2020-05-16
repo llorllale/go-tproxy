@@ -43,14 +43,14 @@ func (listener *Listener) AcceptTProxy() (*Conn, error) {
 // the listener is accepting connections
 // from
 func (listener *Listener) Addr() net.Addr {
-	return listener.base.Addr()
+	return listener.Base.Addr()
 }
 
 // Close will close the listener from accepting
 // any more connections. Any blocked connections
 // will unblock and close
 func (listener *Listener) Close() error {
-	return listener.base.Close()
+	return listener.Base.Close()
 }
 
 // ListenTCP will construct a new TCP listener
