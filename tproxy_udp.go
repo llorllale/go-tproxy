@@ -110,7 +110,7 @@ func ReadFromUDP(conn *net.UDPConn, b []byte) (int, *net.UDPAddr, *net.UDPAddr, 
 				originalDst = &net.UDPAddr{
 					IP:   net.IP(pp.Addr[:]),
 					Port: int(p[0])<<8 + int(p[1]),
-					Zone: strconv.Itoa(int(pp.Scope_id)),
+					Zone: "", //not needed in our context, but kept for ref: strconv.Itoa(int(pp.Scope_id)),
 				}
 
 			default:
