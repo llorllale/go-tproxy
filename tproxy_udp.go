@@ -130,10 +130,30 @@ func ReadFromUDP(conn *net.UDPConn, b []byte) (int, *net.UDPAddr, *net.UDPAddr, 
 	return n, addr, originalDst, nil
 }
 
+type UDPDialOption func(*udpOptions)
+
+type udpOptions struct {
+	bind bool
+}
+
+func DoNotBind() UDPDialOption {
+	return func(options *udpOptions) {
+		options.bind = false
+	}
+}
+
 // DialUDP connects to the remote address raddr on the network net,
 // which must be "udp", "udp4", or "udp6".  If laddr is not nil, it is
 // used as the local address for the connection.
-func DialUDP(network string, laddr *net.UDPAddr, raddr *net.UDPAddr) (*net.UDPConn, error) {
+func DialUDP(network string, laddr *net.UDPAddr, raddr *net.UDPAddr, opts ...UDPDialOption) (*net.UDPConn, error) {
+	options := &udpOptions{
+		bind: true,
+	}
+
+	for i := range opts {
+		opts[i](options)
+	}
+
 	remoteSocketAddress, err := udpAddrToSocketAddr(raddr)
 	if err != nil {
 		return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("build destination socket address: %s - %+v", err, raddr)}
@@ -157,14 +177,11 @@ func DialUDP(network string, laddr *net.UDPAddr, raddr *net.UDPAddr) (*net.UDPCo
 	}
 
 	if ipv6 {
-
 		if err = syscall.SetsockoptInt(fileDescriptor, unix.SOL_IPV6, unix.IPV6_TRANSPARENT, 1); err != nil {
 			syscall.Close(fileDescriptor)
 			return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("set socket option: IPV6_TRANSPARENT: %s", err)}
 		}
-
 	} else {
-
 		if err = syscall.SetsockoptInt(fileDescriptor, unix.SOL_IP, unix.IP_TRANSPARENT, 1); err != nil {
 			syscall.Close(fileDescriptor)
 			return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("set socket option: IP_TRANSPARENT: %s", err)}
@@ -172,9 +189,11 @@ func DialUDP(network string, laddr *net.UDPAddr, raddr *net.UDPAddr) (*net.UDPCo
 
 	}
 
-	if err = syscall.Bind(fileDescriptor, localSocketAddress); err != nil {
-		syscall.Close(fileDescriptor)
-		return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("socket bind: %s", err)}
+	if options.bind {
+		if err = syscall.Bind(fileDescriptor, localSocketAddress); err != nil {
+			syscall.Close(fileDescriptor)
+			return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("socket bind: %s", err)}
+		}
 	}
 
 	if err = syscall.Connect(fileDescriptor, remoteSocketAddress); err != nil {
